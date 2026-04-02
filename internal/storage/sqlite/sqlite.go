@@ -19,7 +19,7 @@ func New(storagePath string) (*Storage, error) {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	stmt, err := db.Prepare(
+	_, err = db.Exec(
 		`CREATE TABLE IF NOT EXISTS urls (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		alias TEXT NOT NULL UNIQUE,
@@ -27,11 +27,7 @@ func New(storagePath string) (*Storage, error) {
 	CREATE INDEX IF NOT EXISTS idx_alias ON urls(alias);
 	`)
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
-	}
-
-	_, err = stmt.Exec()
-	if err != nil {
+		_ = db.Close()
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
