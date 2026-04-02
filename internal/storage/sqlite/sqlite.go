@@ -54,3 +54,20 @@ func (s *Storage) SaveURL(urlToSave string, alias string) (int64, error) {
 
 	return id, nil
 }
+
+func (s *Storage) getUrl(alias string) (string, error) {
+	const op = "storage.sqlite.GetURL"
+
+	var url string
+	err := s.db.QueryRow("SELECT url FROM urls WHERE id = ?", alias).Scan(&url)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", fmt.Errorf("%s: %w", op, storage.ErrURLNotFound)
+		}
+		return "", fmt.Errorf("%s: %w", op, err)
+	}
+
+	return url, nil
+}
+
+// func (s *Storage) DeleteUrl(alias string) error

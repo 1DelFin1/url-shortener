@@ -3,10 +3,15 @@ package main
 import (
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"url-shortener/internal/config"
+	"url-shortener/internal/http-server/handlers/url/save"
 	"url-shortener/internal/lib/logger/sl"
 	"url-shortener/internal/storage/sqlite"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 const (
@@ -30,28 +35,31 @@ func main() {
 		os.Exit(1)
 	}
 
-	id, err := storage.SaveURL("https://yandex.ru", "yandex")
-	if err != nil {
-		logger.Error("Failed to save url", sl.Err(err))
-		os.Exit(1)
+	router := chi.NewRouter()
+
+	router.Use(middleware.RequestID)
+	router.Use(middleware.Logger)
+	router.Use(middleware.Recoverer)
+	router.Use(middleware.URLFormat)
+
+	router.Post("/url", save.New(logger, storage))
+	logger.Info("starting server")
+
+	srv := &http.Server{
+		Addr:         cfg.Address,
+		Handler:      router,
+		ReadTimeout:  cfg.HTTPServer.Timeout,
+		WriteTimeout: cfg.HTTPServer.Timeout,
+		IdleTimeout:  cfg.HTTPServer.IdleTimeout,
 	}
 
-	logger.Info("saved: ", slog.Int64("id", id))
-
-	id2, err := storage.SaveURL("https://goole.com", "google")
-	if err != nil {
-		logger.Error("Failed to save url", sl.Err(err))
-		os.Exit(1)
+	if err := srv.ListenAndServe(); err != nil {
+		logger.Error("Failed to start server", sl.Err(err))
 	}
 
-	logger.Info("saved: ", slog.Int64("id", id2))
-
-	_ = storage
-
-	// TODO: init router: chi
-
-	// TODO: run server
+	logger.Error("server shutdown")
 }
+
 func setupLogger(env string) *slog.Logger {
 	var logger *slog.Logger
 	switch env {
