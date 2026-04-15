@@ -43,10 +43,16 @@ func main() {
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.URLFormat)
 
-	router.Post("/url", save.New(logger, storage))
-	logger.Info("starting server")
+	router.Route("/url", func(r chi.Router) {
+		r.Use(middleware.BasicAuth("url-shortener", map[string]string{
+			cfg.HTTPServer.User: cfg.HTTPServer.Password,
+		}))
 
-	router.Get("/{alias}", redirect.New(logger, storage))
+		r.Post("/", save.New(logger, storage))
+		r.Get("/{alias}", redirect.New(logger, storage))
+	})
+
+	logger.Info("starting server")
 
 	srv := &http.Server{
 		Addr:         cfg.Address,

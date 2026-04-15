@@ -59,7 +59,7 @@ func (s *Storage) GetURL(alias string) (string, error) {
 	const op = "storage.sqlite.GetURL"
 
 	var url string
-	err := s.db.QueryRow("SELECT url FROM urls WHERE id = ?", alias).Scan(&url)
+	err := s.db.QueryRow("SELECT url FROM urls WHERE alias = ?", alias).Scan(&url)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return "", fmt.Errorf("%s: %w", op, storage.ErrURLNotFound)
