@@ -49,8 +49,8 @@ func main() {
 		}))
 
 		r.Post("/", save.New(logger, storage))
-		r.Get("/{alias}", redirect.New(logger, storage))
 	})
+	router.Get("/{alias}", redirect.New(logger, storage))
 
 	logger.Info("starting server")
 
